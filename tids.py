@@ -5,10 +5,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pysat
 from funcs import calculate_delta
-from manual_sorting import manual_sort
 
 
-def plot_orbits(doy: int, user_examine: bool, path: str):
+def plot_doy(doy: int, classify: bool, train: bool):
     orbit_info = {'index': 'OrbitNumber', 'kind': 'orbit'}
 
     lang = pysat.Instrument('de2', 'lang', use_header=True, strict_time_flag=False, orbit_info=orbit_info)
@@ -26,6 +25,10 @@ def plot_orbits(doy: int, user_examine: bool, path: str):
 
     orbits = np.unique(lang['OrbitNumber'])
     plt.close('all')
+    if classify:
+        img_id = doy - 1
+        label_list = []
+        id_list = []
     for orbit in orbits:
         # Choose orbit number and low altitudes
         ind = (nacs['OrbitNumber'] == orbit) * (nacs['alt'] < 400)
@@ -50,12 +53,32 @@ def plot_orbits(doy: int, user_examine: bool, path: str):
                                                                t0.date().month,
                                                                t0.date().day,
                                                                orbit))
-            if user_examine:
-                img_src = path + "\\" + str(t0.date().year) + "_" + str(doy) + "_" + str(orbit) + "_" + "plot.jpg"
-                plt.savefig(img_src)
-                manual_sort(source=img_src)
+            if classify:
+                label_list.append(classify_image(train=train, img_id=img_id))
+                id_list.append(img_id)
+                img_id += 1
             else:
                 plt.show()
+    if classify:
+        return [label_list, id_list]
+
+
+def classify_image(train: bool, img_id: int):
+    img_name = str(img_id) + ".jpg"
+    if train:
+        img_path = 'train/' + img_name
+    else:
+        img_path = 'test/' + img_name
+    plt.show()
+    label = input('Enter 1 if the image contains waves, 0 otherwise: ')
+    if label != 0 & label != 1:
+        print("Invalid input")
+        return classify_image()
+    plt.savefig(img_path)
+    print("Image saved as " + img_path)
+    return label
+
+
 
 
 
