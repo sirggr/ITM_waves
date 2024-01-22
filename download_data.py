@@ -15,3 +15,4 @@ def download_range(start, stop):
     rpa.download(start, stop)
     lang = pysat.Instrument('de2', 'lang')
     lang.download(start, stop)
+    return
