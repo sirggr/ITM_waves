@@ -1,4 +1,3 @@
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pysat
@@ -28,14 +27,15 @@ def set_instruments(year: int, doy: int):
     nacs.load(year, doy)
     rpa.load(year, doy)
     plt.close('all')
-    instruments = []
+    instruments = list()
     instruments.append(lang)
     instruments.append(nacs)
     instruments.append(rpa)
     return instruments
 
 
-def plot_orbits(instruments, plot_lang: bool, plot_rpa: bool, plot_O: bool, plot_N: bool, plot_Ar: bool):
+def plot_orbits(year: int, doy: int, plot_lang: bool, plot_rpa: bool, plot_o: bool, plot_n2: bool, plot_ar: bool):
+    instruments = set_instruments(year, doy)
     lang = instruments[0]
     nacs = instruments[1]
     rpa = instruments[2]
@@ -48,13 +48,19 @@ def plot_orbits(instruments, plot_lang: bool, plot_rpa: bool, plot_O: bool, plot
             t1 = nacs.index[ind][-1]
 
             fig = plt.figure(figsize=[14, 6])
-            plt.plot(lang['delta_plasmaDensity_norm'][t0:t1], '--',
-                     label='LANG: delta Ne')
-            plt.plot(rpa['delta_ionDensity_norm'][t0:t1], '--',
-                     label='RPA: delta Ni')
-            plt.plot(nacs['delta_O_density_norm'][t0:t1], label='NACS: delta O')
-            plt.plot(nacs['delta_N2_density_norm'][t0:t1], label='NACS: delta N2')
-            plt.plot(nacs['delta_Ar_density_norm'][t0:t1], label='NACS: delta Ar')
+            if plot_lang:
+                plt.plot(lang['delta_plasmaDensity_norm'][t0:t1], '--',
+                         label='LANG: delta Ne')
+            if plot_rpa:
+                plt.plot(rpa['delta_ionDensity_norm'][t0:t1], '--',
+                         label='RPA: delta Ni')
+            if plot_o:
+                plt.plot(nacs['delta_O_density_norm'][t0:t1], label='NACS: delta O')
+
+            if plot_n2:
+                plt.plot(nacs['delta_N2_density_norm'][t0:t1], label='NACS: delta N2')
+            if plot_ar:
+                plt.plot(nacs['delta_Ar_density_norm'][t0:t1], label='NACS: delta Ar')
             plt.legend()
             plt.grid()
             plt.ylim([-0.5, 0.5])
@@ -65,4 +71,27 @@ def plot_orbits(instruments, plot_lang: bool, plot_rpa: bool, plot_O: bool, plot
                                                                t0.date().day,
                                                                orbit))
             plt.show()
+
+
+def series_lists(year: int, doy: int, attr: str):
+    instruments = set_instruments(year, doy)
+    lang = instruments[0]
+    nacs = instruments[1]
+    rpa = instruments[2]
+    orbits = np.unique(lang['OrbitNumber'])
+    series_list = list()
+    for orbit in orbits:
+        ind = (nacs['OrbitNumber'] == orbit) * (nacs['alt'] < 400)
+        if sum(ind) > 100:
+            t0 = nacs.index[ind][0]
+            t1 = nacs.index[ind][-1]
+            if attr == 'delta_plasmaDensity_norm':
+                attr_series = lang[attr][t0:t1]
+            elif attr == 'delta_ionDensity_norm':
+                attr_series = rpa[attr][t0:t1]
+            else:
+                attr_series = nacs[attr][t0:t1]
+            series_list.append(attr_series)
+
+    return series_list
 
